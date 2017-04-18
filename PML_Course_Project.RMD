@@ -11,13 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
 
 More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
 The goal of this project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. The prediction model will then be used to predict 20 different test cases.
 
-```{r setup_eviron, echo=TRUE,warning=FALSE,error=FALSE}
+```{r setup_eviron, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # load packages
 library(caret)
 library(rpart)
@@ -29,8 +29,8 @@ library(knitr)
 library(doParallel)
 
 # Clean up environment
-rm(list=ls())
-gc()
+#rm(list=ls())
+#gc()
 ```
 
 ## Get data
@@ -40,7 +40,7 @@ The test data are available here: https://d396qusza40orc.cloudfront.net/predmach
 
 To load the datasets we execute:
 
-```{r load_data, echo=TRUE,warning=FALSE,error=FALSE}
+```{r load_data, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # download data or use previously downloaded data
 if(!file.exists("pml-training.csv")){
   download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", 
@@ -53,14 +53,14 @@ if(!file.exists("pml-testing.csv")){
 ```
 
 # Load data with valid values
-```{r clean_data, echo=TRUE,warning=FALSE,error=FALSE}
+```{r clean_data, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 train <- read.csv("pml-training.csv", header = TRUE, na.strings=c("","NA", "#DIV/0!"))
 test <- read.csv("pml-testing.csv", header = TRUE, na.strings=c("","NA", "#DIV/0!"))
 ```
 
 ## Check valid data
 
-```{r how_clean, echo=TRUE,warning=FALSE,error=FALSE}
+```{r how_clean, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # see error percentage 
 NAPercent <- round(colMeans(is.na(train)), 2)
 table(NAPercent)
@@ -69,7 +69,7 @@ table(NAPercent)
 
 ## Clean up variables
 
-```{r clean_vars, echo=TRUE,warning=FALSE,error=FALSE}
+```{r clean_vars, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # find index of the complete columns minus the first 
 index <- which(NAPercent==0)[-1]
 # subset the data
@@ -93,7 +93,7 @@ for(i in 1:(length(train)-1)){
 
 We split the data, 80% goes to the training set, 20% goes to the testing set.
 
-```{r cross_val, echo=TRUE,warning=FALSE,error=FALSE}
+```{r cross_val, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # split train data set
 inTrain <- createDataPartition(y=train$classe,p=0.8, list=FALSE)
 trainData <- train[inTrain,]
@@ -104,9 +104,9 @@ rbind(trainData = dim(trainData), validation = dim(validation), test = dim(test)
 
 ## Modeling
 
-We model with Generalized Boosted Regression Models
+We model with Generalized Boosted Regression Model
 
-```{r mod_gbrm, echo=TRUE,warning=FALSE,error=FALSE}
+```{r mod_gbrm, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # run the generalized boosted regression model
 gbmFit <- train(classe~., data = trainData, method ="gbm", verbose = FALSE)
 gbmFit
@@ -118,7 +118,7 @@ confusionMatrix(gbmPred, validation$classe)
 
 Then we model with Random Forests
 
-```{r mod_rf, echo=TRUE,warning=FALSE,error=FALSE}
+```{r mod_rf, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # run the random forest model on the training data set
 rfFit <- randomForest(classe~., data = trainData, method ="rf", prox = TRUE)
 rfFit
@@ -128,11 +128,11 @@ rfPred <- predict(rfFit, validation)
 confusionMatrix(rfPred, validation$classe)
 ```
 ## Comparison of models
-From the above, we can see that randomForest is the better performing algorithm with **0.43%** error rate, which is what we expect the out of sample error rate to be. When applied to the validation set for cross validation, the model achieved an accuracy of **99.7%**, which indicates the actual error rate is **0.3%**, where as GBM has an accuracy of 96.0% with error rate of **4.0%**.
+The better performing algorithm is **Random forest**  with a **0.45%** error rate. The cross validation yields that the model achieves an accuracy of **99.6%**, while the  **Generalized Boost Model** has an accuracy of **96.0%**.
 
 ## Result
 This is the result for the 20 test cases.
-```{r results_qz, echo=TRUE,warning=FALSE,error=FALSE}
+```{r results_qz, echo=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 # apply random forest model to test set
 predict(rfFit, test)
 
